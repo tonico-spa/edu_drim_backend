@@ -4,7 +4,8 @@ import os
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from database import get_db
-from models.class_ import Class, ClassTag
+from models.class_ import Class, ClassTag, ClassUserType
+from models.user_type import UserType
 from models.tag import Tag
 
 router = APIRouter()
@@ -45,14 +46,13 @@ async def sanity_webhook(request: Request, db: Session = Depends(get_db)):
 @router.post("/sanity/sync/{sanity_id}")
 def manual_sync(sanity_id: str, db: Session = Depends(get_db)):
     """Admin endpoint to manually re-sync a class from Sanity by its ID."""
-    # In production, fetch from Sanity GROQ API and upsert.
-    # Placeholder — actual GROQ fetch would go here.
     return {"message": f"Sync triggered for {sanity_id}"}
 
 
 def _upsert_class(db: Session, payload: dict, sanity_id: str):
     cls = db.query(Class).filter(Class.sanity_id == sanity_id).first()
-    if not cls:
+    is_new = cls is None
+    if is_new:
         cls = Class(sanity_id=sanity_id)
         db.add(cls)
 
@@ -72,6 +72,14 @@ def _upsert_class(db: Session, payload: dict, sanity_id: str):
                 db.add(ClassTag(class_id=cls.id, tag_id=tag.id))
 
     db.commit()
+    db.refresh(cls)
+
+    # On new class: make it visible to all non-admin user_types by default
+    if is_new:
+        non_admin_types = db.query(UserType).filter(UserType.is_admin == False).all()
+        for ut in non_admin_types:
+            db.add(ClassUserType(class_id=cls.id, user_type_id=ut.id))
+        db.commit()
 
 
 def _deactivate_class(db: Session, sanity_id: str):

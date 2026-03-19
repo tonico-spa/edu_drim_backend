@@ -25,6 +25,7 @@ class Class(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     class_tags = relationship("ClassTag", back_populates="class_", cascade="all, delete-orphan")
+    user_types = relationship("ClassUserType", back_populates="class_", cascade="all, delete-orphan")
 
 
 class ClassTag(Base):
@@ -35,3 +36,12 @@ class ClassTag(Base):
 
     class_ = relationship("Class", back_populates="class_tags")
     tag = relationship("Tag")
+
+
+class ClassUserType(Base):
+    __tablename__ = "class_user_types"
+
+    class_id = Column(UUID(as_uuid=True), ForeignKey("classes.id", ondelete="CASCADE"), primary_key=True)
+    user_type_id = Column(UUID(as_uuid=True), ForeignKey("user_types.id", ondelete="CASCADE"), primary_key=True)
+
+    class_ = relationship("Class", back_populates="user_types")

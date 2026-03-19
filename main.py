@@ -6,6 +6,7 @@ import os
 load_dotenv()
 
 from routers import auth, quiz, classes, courses, teacher_courses, webhooks
+from routers import user_types
 
 app = FastAPI(title="EDU_DRIM API")
 
@@ -23,6 +24,7 @@ app.include_router(classes.router, prefix="/api/classes", tags=["classes"])
 app.include_router(courses.router, prefix="/api/courses", tags=["courses"])
 app.include_router(teacher_courses.router, prefix="/api/teacher/courses", tags=["teacher-courses"])
 app.include_router(webhooks.router, prefix="/api/webhooks", tags=["webhooks"])
+app.include_router(user_types.router, prefix="/api/user-types", tags=["user-types"])
 
 
 @app.get("/health")

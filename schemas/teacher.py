@@ -1,12 +1,14 @@
 from pydantic import BaseModel, EmailStr
 from uuid import UUID
 from datetime import datetime
+from typing import Optional
 
 
 class TeacherRegister(BaseModel):
     name: str
     email: EmailStr
     password: str
+    user_type_id: Optional[UUID] = None
 
 
 class TeacherLogin(BaseModel):
