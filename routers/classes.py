@@ -30,6 +30,19 @@ def _get_allowed_sanity_ids(user_type_id: str, db: Session) -> Optional[set]:
     return {r.sanity_id for r in rows}
 
 
+@router.get("/allowed-ids")
+def get_allowed_ids(
+    teacher=Depends(get_optional_teacher),
+    db: Session = Depends(get_db),
+):
+    """Returns the sanity_ids the current teacher is allowed to see.
+    Returns null if no restriction applies (not logged in, or admin)."""
+    if not teacher or teacher.get("is_admin") or not teacher.get("user_type_id"):
+        return {"ids": None}
+    ids = _get_allowed_sanity_ids(teacher["user_type_id"], db)
+    return {"ids": list(ids)}
+
+
 @router.get("")
 def list_classes(
     tags: Optional[str] = Query(None),

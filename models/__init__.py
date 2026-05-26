@@ -4,3 +4,4 @@ from .tag import Tag
 from .class_ import Class, ClassTag, ClassUserType
 from .course import CatalogCourse, CatalogCourseClass, CatalogCourseTag, TeacherCourse, TeacherCourseClass
 from .quiz import QuizQuestion, QuizOption, QuizOptionTagWeight
+from .professor import ProfessorRating

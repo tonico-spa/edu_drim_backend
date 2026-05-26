@@ -5,12 +5,11 @@ from dependencies import get_current_teacher
 from models.teacher import Teacher
 from models.course import TeacherCourse, TeacherCourseClass
 from schemas.course import TeacherCourseCreate, TeacherCourseUpdate, TeacherCourseOut
-from services.sanity import fetch_classes
 
 router = APIRouter()
 
 
-def _build_out(course: TeacherCourse, classes_by_id: dict) -> dict:
+def _build_out(course: TeacherCourse) -> dict:
     ordered_ids = [cc.class_id for cc in sorted(course.course_classes, key=lambda x: x.order)]
     return {
         "id": course.id,
@@ -18,15 +17,8 @@ def _build_out(course: TeacherCourse, classes_by_id: dict) -> dict:
         "description": course.description,
         "created_at": course.created_at,
         "updated_at": course.updated_at,
-        "classes": [classes_by_id[cid] for cid in ordered_ids if cid in classes_by_id],
+        "class_ids": ordered_ids,
     }
-
-
-def _fetch_classes_map(class_ids: list[str]) -> dict:
-    if not class_ids:
-        return {}
-    classes = fetch_classes()
-    return {c["_id"]: c for c in classes if c["_id"] in class_ids}
 
 
 @router.get("")
@@ -40,9 +32,7 @@ def list_teacher_courses(
         .filter(TeacherCourse.teacher_id == teacher.id)
         .all()
     )
-    all_ids = [cc.class_id for c in courses for cc in c.course_classes]
-    classes_map = _fetch_classes_map(all_ids)
-    return [_build_out(c, classes_map) for c in courses]
+    return [_build_out(c) for c in courses]
 
 
 @router.get("/{course_id}")
@@ -59,9 +49,7 @@ def get_teacher_course(
     )
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    ids = [cc.class_id for cc in course.course_classes]
-    classes_map = _fetch_classes_map(ids)
-    return _build_out(course, classes_map)
+    return _build_out(course)
 
 
 @router.post("", status_code=201)
@@ -79,8 +67,7 @@ def create_teacher_course(
 
     db.commit()
     db.refresh(course)
-    classes_map = _fetch_classes_map(body.class_ids)
-    return _build_out(course, classes_map)
+    return _build_out(course)
 
 
 @router.put("/{course_id}")
@@ -109,9 +96,7 @@ def update_teacher_course(
 
     db.commit()
     db.refresh(course)
-    ids = body.class_ids or [cc.class_id for cc in course.course_classes]
-    classes_map = _fetch_classes_map(ids)
-    return _build_out(course, classes_map)
+    return _build_out(course)
 
 
 @router.delete("/{course_id}", status_code=204)

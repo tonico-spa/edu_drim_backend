@@ -38,7 +38,8 @@ def fetch_classes(tag_names: list[str] | None = None, resource: str | None = Non
         duration_minutes,
         level,
         resources,
-        "tags": tags[]->{{ "name": name.current, label }}
+        "tags": tags[]->{{ "name": name.current, label }},
+        "main_tag": main_tag->{{ "name": name.current, label, color }}
     }}
     """
     url = _sanity_url(groq.strip())
@@ -57,7 +58,18 @@ def fetch_class_by_sanity_id(sanity_id: str) -> dict | None:
         level,
         resources,
         materials,
-        "tags": tags[]->{{ "name": name.current, label }}
+        "tags": tags[]->{{ "name": name.current, label }},
+        "main_tag": main_tag->{{ "name": name.current, label, color }},
+        video_link,
+        unidad,
+        semestre,
+        duration,
+        class_name,
+        type,
+        recursos,
+        closing,
+        "images": images[]{{ "url": asset->url }},
+        "files": files[]{{ "url": asset->url, "name": asset->originalFilename }}
     }}
     """
     url = _sanity_url(groq.strip())
@@ -109,6 +121,38 @@ def fetch_courses(tag_names: list[str] | None = None) -> list[dict]:
     response = httpx.get(url, timeout=10)
     response.raise_for_status()
     return response.json().get("result", [])
+
+
+def fetch_professors() -> list[dict]:
+    groq = """
+    *[_type == "professor"]{
+        _id,
+        name,
+        title,
+        "photo_url": photo.asset->url,
+        bio
+    }
+    """
+    url = _sanity_url(groq.strip())
+    response = httpx.get(url, timeout=10)
+    response.raise_for_status()
+    return response.json().get("result", [])
+
+
+def fetch_professor_by_id(sanity_id: str) -> dict | None:
+    groq = f"""
+    *[_type == "professor" && _id == "{sanity_id}"][0]{{
+        _id,
+        name,
+        title,
+        "photo_url": photo.asset->url,
+        bio
+    }}
+    """
+    url = _sanity_url(groq.strip())
+    response = httpx.get(url, timeout=10)
+    response.raise_for_status()
+    return response.json().get("result")
 
 
 def fetch_course_by_id(sanity_id: str) -> dict | None:
